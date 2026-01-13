@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Interface</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+            position: relative;
+        }
+
+        .made-by {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 12px;
+            color: #666;
+            z-index: 100;
+        }
+
+        header {
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .api-input {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+        }
+
+        .api-input label {
+            font-weight: bold;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .api-input input {
+            flex-grow: 1;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+
+        .api-input button {
+            background: #00c851;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .api-input button:hover {
+            background: #00a842;
+        }
+
+        .mode-toggle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 10px;
+            min-width: 220px;
+        }
+
+        .mode-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+        }
+
+        .mode-status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-weight: normal;
+            margin-left: 5px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 200px;
+            height: 45px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, #ff7eb3, #ff758c);
+            transition: .4s;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            font-weight: bold;
+            color: white;
+            overflow: hidden;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(to right, #36d1dc, #5b86e5);
+        }
+
+        .toggle-on, .toggle-off {
+            transition: opacity 0.4s;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+
+        .toggle-switch input:checked + .toggle-slider .toggle-on {
+            opacity: 0;
+        }
+
+        .toggle-switch input:not(:checked) + .toggle-slider .toggle-off {
+            opacity: 0;
+        }
+
+        .toggle-slider::after {
+            content: '';
+            position: absolute;
+            height: 37px;
+            width: 95px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50px;
+            transition: .4s;
+            z-index: 1;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::after {
+            transform: translateX(97px);
+        }
+
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            background: #4a6fa5;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .bot-message .avatar {
+            background: #2c3e50;
+        }
+
+        .text {
+            background: white;
+            padding: 12px;
+            border-radius: 15px;
+            border-top-left-radius: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            line-height: 1.5;
+            max-width: 85%;
+            font-size: 14px;
+        }
+
+        .bot-message .text {
+            background: #e3f2fd;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 0;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        textarea {
+            flex-grow: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            font-size: 14px;
+            resize: none;
+            max-height: 120px;
+            transition: border 0.3s;
+            line-height: 1.4;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4a6fa5;
+        }
+
+        #sendButton {
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s;
+            height: 46px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #sendButton:hover {
+            background: #2c3e50;
+        }
+
+        .info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f0f7ff;
+            border-radius: 10px;
+            font-size: 12px;
+            color: #333;
+            border-left: 5px solid #4a6fa5;
+        }
+
+        .info p {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info i {
+            color: #4a6fa5;
+            font-size: 12px;
+        }
+
+        /* Scrollbar */
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .api-input, .mode-toggle {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-comment-alt"></i> Calibrating Persuasion in AI Agents</h1>
+            <p class="subtitle">MVP Research Prototype</p>
+            <div class="controls">
+                <div class="api-input">
+                    <label for="apiKey">Your Groq API Key:</label>
+                    <input type="password" id="apiKey" placeholder="gsk_...">
+                    <button id="saveKey"><i class="fas fa-save"></i> Save</button>
+                </div>
+                <div class="mode-toggle">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="modeToggle" checked>
+                        <label for="modeToggle" class="toggle-slider">
+                            <span class="toggle-on"><i class="fas fa-heart"></i> Emotional</span>
+                            <span class="toggle-off"><i class="fas fa-chart-line"></i> Rational</span>
+                        </label>
+                    </div>
+                    <div class="mode-label">
+                        <i class="fas fa-brain"></i> Assistant Mode:
+                        <span class="mode-status" id="modeStatus">Emotional</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="chat-container" id="chatContainer">
+                <div class="message bot-message">
+                    <div class="avatar"><i class="fas fa-robot"></i></div>
+                    <div class="text">
+                        <strong>Assistant:</strong> Hello! I'm ready to help. Please enter your API key above to start chatting.
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <textarea id="userInput" placeholder="Type your message here... (Shift+Enter for new line)" rows="2"></textarea>
+                <button id="sendButton"><i class="fas fa-paper-plane"></i> Send</button>
+            </div>
+            <div class="info">
+                <p><i class="fas fa-info-circle"></i> <strong>Mode:</strong> <span id="modeInfo">Emotional</span> style active</p>
+                <p><i class="fas fa-key"></i> API key is saved locally in your browser only</p>
+            </div>
+        </main>
+        <div class="made-by">Made by Artem</div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const apiKeyInput = document.getElementById('apiKey');
+        const saveKeyButton = document.getElementById('saveKey');
+        const modeToggle = document.getElementById('modeToggle');
+        const modeInfo = document.getElementById('modeInfo');
+        const modeStatus = document.getElementById('modeStatus');
+
+        // Hidden prompts for style calibration
+        const PROMPTS = {
+            emotional: "You are an emotional, warm, and empathetic assistant. Use expressive language, show enthusiasm, and connect with feelings. Be encouraging and supportive.",
+            rational: "You are a rational, logical, and analytical assistant. Use precise language, focus on facts and data. Be concise, structured, and objective. Avoid emotional expressions."
+        };
+
+        // Groq API configuration
+        const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+        const MODEL = 'llama-3.1-8b-instant';
+
+        // Load saved API key
+        const savedApiKey = localStorage.getItem('groqApiKey');
+        if (savedApiKey) {
+            apiKeyInput.value = savedApiKey;
+            apiKeyInput.placeholder = "✅ Key loaded";
+        }
+
+        // Update mode display
+        function updateModeDisplay() {
+            const isEmotional = modeToggle.checked;
+            const currentMode = isEmotional ? 'Emotional' : 'Rational';
+            
+            if (modeStatus) {
+                modeStatus.textContent = currentMode;
+                modeStatus.style.background = isEmotional ? 'rgba(255, 126, 179, 0.3)' : 'rgba(54, 209, 220, 0.3)';
+            }
+            
+            if (modeInfo) {
+                modeInfo.textContent = currentMode;
+                modeInfo.style.color = isEmotional ? '#ff758c' : '#36d1dc';
+            }
+        }
+        
+        // Initial update
+        updateModeDisplay();
+
+        // Save API key
+        saveKeyButton.addEventListener('click', () => {
+            const key = apiKeyInput.value.trim();
+            if (key && key.startsWith('gsk_')) {
+                localStorage.setItem('groqApiKey', key);
+                alert('✅ API Key saved successfully!');
+                apiKeyInput.type = 'password';
+                apiKeyInput.placeholder = "✅ Key saved!";
+            } else {
+                alert('⚠️ Please enter a valid Groq API key (starts with gsk_)');
+            }
+        });
+
+        // Mode toggle listener
+        modeToggle.addEventListener('change', updateModeDisplay);
+
+        // Add message to chat
+        function addMessage(sender, text, isBot = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isBot ? 'bot-message' : 'user-message'}`;
+
+            const avatarIcon = isBot ? 'fa-robot' : 'fa-user';
+
+            messageDiv.innerHTML = `
+                <div class="avatar"><i class="fas ${avatarIcon}"></i></div>
+                <div class="text"><strong>${sender}:</strong> ${text}</div>
+            `;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Send message to Groq API
+        async function sendToGroq(userMessage) {
+            const apiKey = localStorage.getItem('groqApiKey') || apiKeyInput.value.trim();
+
+            if (!apiKey) {
+                alert('⚠️ Please enter and save your Groq API Key first.');
+                return null;
+            }
+
+            if (!apiKey.startsWith('gsk_')) {
+                alert('❌ Invalid API key format. Groq keys start with "gsk_"');
+                return null;
+            }
+
+            const selectedPrompt = modeToggle.checked ? PROMPTS.emotional : PROMPTS.rational;
+            const systemMessage = `${selectedPrompt} You are a helpful assistant.`;
+
+            const requestBody = {
+                model: MODEL,
+                messages: [
+                    { role: 'system', content: systemMessage },
+                    { role: 'user', content: userMessage }
+                ],
+                temperature: 0.7,
+                max_tokens: 1024
+            };
+
+            try {
+                const response = await fetch(GROQ_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API error ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    return data.choices[0].message.content.trim();
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
+            } catch (error) {
+                console.error('API Error:', error);
+                return `Error: ${error.message}`;
+            }
+        }
+
+        // Handle sending message
+        async function handleSendMessage() {
+            const message = userInput.value.trim();
+            if (!message) {
+                userInput.focus();
+                return;
+            }
+
+            // Add user message
+            addMessage('You', message, false);
+
+            // Clear input
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            userInput.focus();
+
+            // Show thinking indicator
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'message bot-message';
+            thinkingDiv.innerHTML = `
+                <div class="avatar"><i class="fas fa-robot"></i></div>
+                <div class="text"><strong>Assistant:</strong> <i class="fas fa-spinner fa-spin"></i> Thinking...</div>
+            `;
+            chatContainer.appendChild(thinkingDiv);
+
+            // Get response
+            const botResponse = await sendToGroq(message);
+
+            // Remove thinking and add response
+            chatContainer.removeChild(thinkingDiv);
+            addMessage('Assistant', botResponse || "No response received.", true);
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', handleSendMessage);
+        
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                handleSendMessage();
+            }
+        });
+
+        // Auto-resize textarea
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Focus input on load
+        window.addEventListener('load', () => {
+            userInput.focus();
+        });
+    </script>
+</body>
+</html>
